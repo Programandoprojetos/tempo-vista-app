@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -11,33 +10,55 @@ import {
   Cloud
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { Howl } from 'howler';
+import Lottie from 'lottie-react';
+import { WeatherData, ForecastDay } from '@/types/weather';
 import { useToast } from '@/components/ui/use-toast';
+import rainAnimation from './animations/rain.json';
+import sunAnimation from './animations/sun.json';
+import snowAnimation from './animations/snow.json';
 
+// Definindo os sons
+const sounds = {
+  Rain: new Howl({ src: ['/sounds/rain.mp3'], volume: 0.5 }),
+  Thunderstorm: new Howl({ src: ['/sounds/thunder.mp3'], volume: 0.5 }),
+  Snow: new Howl({ src: ['/sounds/snow.mp3'], volume: 0.5 }),
+  Clear: new Howl({ src: ['/sounds/birds.mp3'], volume: 0.3 }),
+  Clouds: new Howl({ src: ['/sounds/clouds.mp3'], volume: 0.3 }),
+};
+
+// Definindo animações
+const weatherAnimations = {
+  Clear: sunAnimation,
+  Rain: rainAnimation,
+  Snow: snowAnimation,
+  Clouds: sunAnimation, // Substitua com animação para nuvens, se desejar
+};
+
+// Ícones para o clima
 const weatherIcons = {
-  Clear: <Sun className="text-yellow-400" size={64} />, 
-  Clouds: <Cloud className="text-gray-400" size={64} />, 
-  Rain: <CloudRain className="text-blue-500" size={64} />, 
-  Drizzle: <CloudRain className="text-cyan-400" size={64} />, 
-  Thunderstorm: <CloudRain className="text-purple-600 animate-pulse" size={64} />, 
-  Snow: <Snowflake className="text-blue-200" size={64} />, 
-  Mist: <Cloud className="text-gray-300" size={64} />, 
-  Smoke: <Cloud className="text-gray-500" size={64} />, 
-  Haze: <Cloud className="text-yellow-300" size={64} />, 
-  Dust: <Cloud className="text-yellow-500" size={64} />, 
-  Fog: <Cloud className="text-gray-400" size={64} />, 
-  Sand: <Cloud className="text-yellow-600" size={64} />, 
-  Ash: <Cloud className="text-gray-700" size={64} />, 
-  Squall: <CloudRain className="text-blue-800" size={64} />, 
-  Tornado: <Cloud className="text-red-700 animate-spin" size={64} />, 
+  Clear: <Sun className="text-yellow-400" size={64} />,
+  Clouds: <Cloud className="text-gray-400" size={64} />,
+  Rain: <CloudRain className="text-blue-500" size={64} />,
+  Drizzle: <CloudRain className="text-cyan-400" size={64} />,
+  Thunderstorm: <CloudRain className="text-purple-600 animate-pulse" size={64} />,
+  Snow: <Snowflake className="text-blue-200" size={64} />,
+  Mist: <Cloud className="text-gray-300" size={64} />,
+  Smoke: <Cloud className="text-gray-500" size={64} />,
+  Haze: <Cloud className="text-yellow-300" size={64} />,
+  Dust: <Cloud className="text-yellow-500" size={64} />,
+  Fog: <Cloud className="text-gray-400" size={64} />,
+  Sand: <Cloud className="text-yellow-600" size={64} />,
+  Ash: <Cloud className="text-gray-700" size={64} />,
+  Squall: <CloudRain className="text-blue-800" size={64} />,
+  Tornado: <Cloud className="text-red-700 animate-spin" size={64} />,
   Default: <CloudSun className="text-gray-300" size={64} />,
 };
 
-const API_KEY = "6db8d86e39995531dd7a032d92a31f2c"; // Updated API key
-
 export default function WeatherApp() {
   const [city, setCity] = useState('');
-  const [weather, setWeather] = useState(null);
-  const [forecast, setForecast] = useState([]);
+  const [weather, setWeather] = useState<WeatherData | null>(null);
+  const [forecast, setForecast] = useState<ForecastDay[]>([]);
   const [loading, setLoading] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const { toast } = useToast();
@@ -46,6 +67,13 @@ export default function WeatherApp() {
     const dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
     setIsDarkMode(dark);
   }, []);
+
+  const playSoundForCondition = (condition: string) => {
+    const sound = sounds[condition as keyof typeof sounds];
+    if (sound) {
+      sound.play();
+    }
+  };
 
   const fetchWeather = async () => {
     if (!city) {
@@ -60,7 +88,7 @@ export default function WeatherApp() {
     setLoading(true);
     try {
       const res = await fetch(
-        `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${API_KEY}&units=metric&lang=pt_br`
+        `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=6db8d86e39995531dd7a032d92a31f2c&units=metric&lang=pt_br`
       );
       const data = await res.json();
       
@@ -69,14 +97,15 @@ export default function WeatherApp() {
       }
       
       setWeather(data);
+      playSoundForCondition(data.weather[0].main);
 
       const forecastRes = await fetch(
-        `https://api.openweathermap.org/data/2.5/forecast?q=${city}&appid=${API_KEY}&units=metric&lang=pt_br`
+        `https://api.openweathermap.org/data/2.5/forecast?q=${city}&appid=6db8d86e39995531dd7a032d92a31f2c&units=metric&lang=pt_br`
       );
       const forecastData = await forecastRes.json();
 
-      const daily = {};
-      forecastData.list.forEach(item => {
+      const daily: Record<string, any[]> = {};
+      forecastData.list.forEach((item: any) => {
         const date = item.dt_txt.split(' ')[0];
         if (!daily[date]) daily[date] = [];
         daily[date].push(item);
@@ -94,7 +123,7 @@ export default function WeatherApp() {
       console.error('Erro ao buscar clima:', err);
       toast({
         title: "Erro",
-        description: err.message === "Cidade não encontrada" 
+        description: err instanceof Error && err.message === "Cidade não encontrada" 
           ? "Cidade não encontrada. Verifique o nome e tente novamente."
           : "Erro ao buscar dados do clima. Tente novamente mais tarde.",
         variant: "destructive",
@@ -114,6 +143,16 @@ export default function WeatherApp() {
 
   const renderWeatherIcon = (condition: string) => {
     return weatherIcons[condition] || weatherIcons['Default'];
+  };
+
+  const renderWeatherAnimation = (condition: string) => {
+    return (
+      <Lottie 
+        animationData={weatherAnimations[condition] || sunAnimation} 
+        loop={true} 
+        style={{ width: 100, height: 100 }} 
+      />
+    );
   };
 
   const backgroundStyle = weather ? weather.weather[0].main : 'Default';
@@ -157,7 +196,7 @@ export default function WeatherApp() {
         >
           <Card className="bg-white/90 backdrop-blur-md shadow-2xl rounded-2xl p-6 text-gray-800">
             <CardContent className="flex flex-col items-center gap-4">
-              {renderWeatherIcon(weather.weather[0].main)}
+              {renderWeatherAnimation(weather.weather[0].main)}  {/* Usando animação */}
               <h2 className="text-2xl font-bold">{weather.name}</h2>
               <p className="text-lg capitalize">{weather.weather[0].description}</p>
               <p className="text-4xl font-semibold text-blue-700">{Math.round(weather.main.temp)}°C</p>
