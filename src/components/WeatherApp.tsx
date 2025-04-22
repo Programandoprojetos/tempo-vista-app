@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -19,7 +20,7 @@ import sunAnimation from './animations/sun.json';
 import snowAnimation from './animations/snow.json';
 
 // Definindo os sons
-const sounds = {
+const sounds: Record<string, Howl> = {
   Rain: new Howl({ src: ['/sounds/rain.mp3'], volume: 0.5 }),
   Thunderstorm: new Howl({ src: ['/sounds/thunder.mp3'], volume: 0.5 }),
   Snow: new Howl({ src: ['/sounds/snow.mp3'], volume: 0.5 }),
@@ -28,7 +29,7 @@ const sounds = {
 };
 
 // Definindo animações
-const weatherAnimations = {
+const weatherAnimations: Record<string, any> = {
   Clear: sunAnimation,
   Rain: rainAnimation,
   Snow: snowAnimation,
@@ -142,7 +143,7 @@ export default function WeatherApp() {
   };
 
   const renderWeatherIcon = (condition: string) => {
-    return weatherIcons[condition] || weatherIcons['Default'];
+    return weatherIcons[condition as keyof typeof weatherIcons] || weatherIcons['Default'];
   };
 
   const renderWeatherAnimation = (condition: string) => {
@@ -166,7 +167,7 @@ export default function WeatherApp() {
   };
 
   return (
-    <div className={`min-h-screen flex flex-col items-center justify-center bg-gradient-to-br ${bgClasses[backgroundStyle] || bgClasses.Default} p-4 transition-all duration-700 text-white`}>
+    <div className={`min-h-screen flex flex-col items-center justify-center bg-gradient-to-br ${bgClasses[backgroundStyle as keyof typeof bgClasses] || bgClasses.Default} p-4 transition-all duration-700 text-white`}>
       <h1 className="text-4xl font-bold mb-6">Previsão do Tempo</h1>
       <div className="flex gap-2 mb-4 w-full max-w-sm">
         <Input 
